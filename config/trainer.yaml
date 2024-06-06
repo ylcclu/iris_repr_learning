@@ -31,7 +31,7 @@ common:
 
 collection:
   train:
-    num_envs: 1
+    num_envs: 4
     stop_after_epochs: 500
     num_episodes_to_save: 10
     config:
@@ -40,6 +40,7 @@ collection:
       temperature: 1.0
       num_steps: 200
       burn_in: ${training.actor_critic.burn_in}
+      discr_repr: False
   test:
     num_envs: 8
     num_episodes_to_save: ${collection.train.num_episodes_to_save}
@@ -49,12 +50,13 @@ collection:
       temperature: 0.5
       num_episodes: 16
       burn_in: ${training.actor_critic.burn_in}
+      discr_repr: False
 
 training:
   should: True
   learning_rate: 0.0001
   tokenizer:
-    batch_num_samples: 256
+    batch_num_samples: 150
     grad_acc_steps: 1
     max_grad_norm: 10.0
     start_after_epochs: 5

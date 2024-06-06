@@ -134,3 +134,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+observations_krull.pt
+actions_krull.pt
+actions_num_envs_1.pt
+actions_num_envs_25.pt
+discr_reprs_krull.pt
+observations_num_envs_1.pt
+observations_num_envs_25.pt

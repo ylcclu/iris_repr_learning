@@ -25,7 +25,7 @@ class Collector:
         self.heuristic = RandomHeuristic(self.env.num_actions)
 
     @torch.no_grad()
-    def collect(self, agent: Agent, epoch: int, epsilon: float, should_sample: bool, temperature: float, burn_in: int, *, num_steps: Optional[int] = None, num_episodes: Optional[int] = None):
+    def collect(self, agent: Agent, epoch: int, epsilon: float, should_sample: bool, temperature: float, burn_in: int, discr_repr: bool = False, *, num_steps: Optional[int] = None, num_episodes: Optional[int] = None) -> List[dict]:
         assert self.env.num_actions == agent.world_model.act_vocab_size
         assert 0 <= epsilon <= 1
 
@@ -36,6 +36,10 @@ class Collector:
         steps, episodes = 0, 0
         returns = []
         observations, actions, rewards, dones = [], [], [], []
+
+        if discr_repr:
+            # Initialize storage for saving to file
+            all_observations, all_actions, all_discr_reprs = [], [], []
 
         burnin_obs_rec, mask_padding = None, None
         if set(self.episode_ids) != {None} and burn_in > 0:
@@ -62,6 +66,16 @@ class Collector:
             actions.append(act)
             rewards.append(reward)
             dones.append(done)
+
+            if discr_repr:
+                # Store for saving
+                encoder_output = agent.tokenizer.encode(obs, should_preprocess=False) # should_preprocess ?
+                # print(f"encoder_output.z_quantized: {encoder_output.z_quantized.cpu().numpy()}")
+                # print(f"encoder_output.tokens: {encoder_output.tokens.cpu().numpy()}")
+                discr_representation = encoder_output.tokens.cpu().numpy()
+                all_discr_reprs.append(discr_representation)
+                all_observations.append(self.obs)
+                all_actions.append(act)
 
             new_steps = len(self.env.mask_new_dones)
             steps += new_steps
@@ -95,6 +109,13 @@ class Collector:
         # Add incomplete episodes to dataset, and complete them later.
         if len(observations) > 0:
             self.add_experience_to_dataset(observations, actions, rewards, dones)
+
+        if discr_repr:
+            # Save observations and actions to file
+            print("save observations and actions to file")
+            torch.save(all_discr_reprs, f'discr_reprs_should_preprocess_False.pt')
+            torch.save(all_observations, f'observations.pt')
+            torch.save(all_actions, f'actions.pt')
 
         agent.actor_critic.clear()
 
